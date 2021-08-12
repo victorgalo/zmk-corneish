@@ -19,14 +19,22 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/display/status_screen.h>
 
 #define ZMK_DISPLAY_NAME CONFIG_LVGL_DISPLAY_DEV_NAME
+#define UI_WORK_Q_STACK_SIZE 512
+#define UI_WORK_Q_PRIORITY 5
 
 static const struct device *display;
 
 static lv_obj_t *screen;
 
+K_THREAD_STACK_DEFINE(ui_q_stack_area, UI_WORK_Q_STACK_SIZE);
+
 __attribute__((weak)) lv_obj_t *zmk_display_status_screen() { return NULL; }
 
-void display_tick_cb(struct k_work *work) { lv_task_handler(); }
+void display_tick_cb(struct k_work_q *ui_work_q) { 
+    lv_task_handler(); 
+    k_work_q_start(&ui_work_q, ui_q_stack_area,
+               K_THREAD_STACK_SIZEOF(ui_q_stack_area), UI_WORK_Q_PRIORITY);
+    }
 
 #define TICK_MS 10
 
