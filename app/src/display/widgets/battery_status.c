@@ -4,11 +4,13 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <kernel.h>
 #include <bluetooth/services/bas.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
+#include <zmk/display.h>
 #include <zmk/display/widgets/battery_status.h>
 #include <zmk/usb.h>
 #include <zmk/events/usb_conn_state_changed.h>
@@ -33,15 +35,28 @@ void battery_status_init() {
     lv_style_set_text_line_space(&label_style, LV_STATE_DEFAULT, 1);
 }
 
+K_MUTEX_DEFINE(battery_status_mutex);
+
+struct {
+    uint8_t level;
+#if IS_ENABLED(CONFIG_USB)
+    bool usb_present;
+#endif
+} battery_status_state;
+
 void set_battery_symbol(lv_obj_t *label) {
     char text[2] = "  ";
-    uint8_t level = bt_bas_get_battery_level();
+    k_mutex_lock(&battery_status_mutex, K_FOREVER);
+
+    uint8_t level = battery_status_state.level;
 
 #if IS_ENABLED(CONFIG_USB)
-    if (zmk_usb_is_powered()) {
+    if (battery_status_state.usb_present) {
         strcpy(text, LV_SYMBOL_CHARGE);
     }
 #endif /* IS_ENABLED(CONFIG_USB) */
+
+    k_mutex_unlock(&battery_status_mutex);
 
     if (level > 95) {
         strcat(text, LV_SYMBOL_BATTERY_FULL);
@@ -71,13 +86,28 @@ int zmk_widget_battery_status_init(struct zmk_widget_battery_status *widget, lv_
 }
 
 lv_obj_t *zmk_widget_battery_status_obj(struct zmk_widget_battery_status *widget) {
-    LOG_DBG("Label: %p", widget->obj);
     return widget->obj;
 }
 
-int battery_status_listener(const zmk_event_t *eh) {
+void battery_status_update_cb(struct k_work *work) {
     struct zmk_widget_battery_status *widget;
     SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { set_battery_symbol(widget->obj); }
+}
+
+K_WORK_DEFINE(battery_status_update_work, battery_status_update_cb);
+
+int battery_status_listener(const zmk_event_t *eh) {
+    k_mutex_lock(&battery_status_mutex, K_FOREVER);
+
+    battery_status_state.level = bt_bas_get_battery_level();
+
+#if IS_ENABLED(CONFIG_USB)
+    battery_status_state.usb_present = zmk_usb_is_powered();
+#endif /* IS_ENABLED(CONFIG_USB) */
+
+    k_mutex_unlock(&battery_status_mutex);
+
+    k_work_submit_to_queue(zmk_display_work_q(), &battery_status_update_work);
     return ZMK_EV_EVENT_BUBBLE;
 }
 
