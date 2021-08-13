@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/event_manager.h>
 #include <zmk/events/usb_conn_state_changed.h>
 #include <zmk/events/ble_active_profile_changed.h>
+#include <zmk/events/endpoint_selection_changed.h>
 #include <zmk/usb.h>
 #include <zmk/ble.h>
 #include <zmk/endpoints.h>
@@ -71,6 +72,10 @@ void set_status_symbol(lv_obj_t *icon) {
     bool active_profie_bonded = output_status_state.active_profile_bonded;
     uint8_t active_profile_index = output_status_state.active_profile_index;
     k_mutex_unlock(&output_status_mutex);
+
+    LOG_DBG("---- Selected endpoint: %d", selected_endpoint);
+    LOG_DBG("---- ZMK_ENDPOINT_USB: %d", ZMK_ENDPOINT_USB);
+    LOG_DBG("---- ZMK_ENDPOINT_BLE: %d", ZMK_ENDPOINT_BLE);
 
     switch (selected_endpoint) {
     case ZMK_ENDPOINT_USB:
