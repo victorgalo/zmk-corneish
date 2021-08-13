@@ -71,6 +71,8 @@ void set_battery_symbol(lv_obj_t *icon) {
 
     uint8_t level = battery_status_state.level;
 
+    LOG_DBG("--> battery_status_state.level: %d", level);
+
 #if IS_ENABLED(CONFIG_USB)
     if (level > 95) {
         if (battery_status_state.usb_present) {
