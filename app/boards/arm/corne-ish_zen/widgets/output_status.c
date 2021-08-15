@@ -82,9 +82,8 @@ void set_status_symbol(lv_obj_t *icon) {
         lv_img_set_src(icon, &USB_connected);
         break;
     case ZMK_ENDPOINT_BLE:
-        if (active_profie_bonded) {
-            if (active_profile_connected) {
-                //sprintf(text, LV_SYMBOL_BLUETOOTH "%i " LV_SYMBOL_OK, active_profile_index);
+        if (active_profie_bonded) { /* the active BT profile has been bonded with a host */
+            if (active_profile_connected) { /* the active BT profile is currently connected to the host */
                 switch (active_profile_index) {
                 case 0:
 #if CONFIG_BOARD_CORNEISH_ZEN_RIGHT
@@ -107,12 +106,9 @@ void set_status_symbol(lv_obj_t *icon) {
                     break;
                 }
             } else {
-                //sprintf(text, LV_SYMBOL_BLUETOOTH "%i " LV_SYMBOL_CLOSE, active_profile_index);
                 lv_img_set_src(icon, &bluetooth_disconnected_right);
             }
-        } else {
-            //sprintf(text, LV_SYMBOL_BLUETOOTH "%i " LV_SYMBOL_SETTINGS, active_profile_index);
-            //lv_img_set_src(icon, &bluetooth_advertising);
+        } else { /* the active BT profile has not been bonded with a host */
             switch (active_profile_index) {
                 case 0:
                     lv_img_set_src(icon, &bluetooth_advertising_1);
@@ -133,19 +129,13 @@ void set_status_symbol(lv_obj_t *icon) {
         }
         break;
     }
-
-    //lv_label_set_text(label, text);
 }
 
 int zmk_widget_output_status_init(struct zmk_widget_output_status *widget, lv_obj_t *parent) {
+
     output_status_init();
-    //widget->obj = lv_label_create(parent, NULL);
     widget->obj = lv_img_create(parent, NULL);
-    //lv_obj_add_style(widget->obj, LV_LABEL_PART_MAIN, &label_style);
-
-    //lv_obj_set_size(widget->obj, 40, 15);
     set_status_symbol(widget->obj);
-
     sys_slist_append(&widgets, &widget->node);
 
     return 0;
