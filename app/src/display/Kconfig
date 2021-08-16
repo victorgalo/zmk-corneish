@@ -29,6 +29,6 @@ config ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
 
 endchoice
 
-rsource "/workspaces/zmk/app/src/display/widgets/Kconfig"
+rsource "widgets/Kconfig"
 
 endif
